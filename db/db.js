@@ -5,6 +5,6 @@ export async function connectDB() {
         console.log("Mongodb connected successfully");
     } catch (error) {
         console.log("Mongodb connection fail", error);
-        process.exit(error)
+        process.exit(1)
     }
 }
