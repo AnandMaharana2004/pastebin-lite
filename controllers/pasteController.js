@@ -31,17 +31,19 @@ export const CreatePaste = async (req, res) => {
 
 export const GetPaste = async (req, res) => {
     try {
-        const result = GetPasteSchema.safeParse(req.params);
-        if (!result.success)
-            return res.status(400).json({ message: result.error.issues[0].message });
+        const parsed = GetPasteSchema.safeParse(req.params);
+        if (!parsed.success) {
+            return res.status(400).json({ message: parsed.error.issues[0].message });
+        }
 
-        const { id } = result.data;
-
+        const { id } = parsed.data;
         const paste = await Paste.findById(id);
+
         if (!paste) {
             return res.status(404).json({ message: "Paste not found or expired" });
         }
 
+        // Handle view limit
         if (paste.viewCount !== null) {
             if (paste.viewCount <= 0) {
                 await paste.deleteOne();
@@ -51,7 +53,6 @@ export const GetPaste = async (req, res) => {
             paste.viewCount -= 1;
 
             if (paste.viewCount === 0) {
-                await paste.save();
                 await paste.deleteOne();
             } else {
                 await paste.save();
@@ -59,10 +60,7 @@ export const GetPaste = async (req, res) => {
         }
 
         const remainingSeconds = paste.deleteAt
-            ? Math.max(
-                0,
-                Math.floor((paste.deleteAt.getTime() - Date.now()) / 1000)
-            )
+            ? Math.max(0, Math.floor((paste.deleteAt - Date.now()) / 1000))
             : null;
 
         return res.status(200).json({
@@ -71,10 +69,11 @@ export const GetPaste = async (req, res) => {
             remaining_views: paste.viewCount,
         });
     } catch (error) {
-        console.log("get paste fail", error);
-        res.status(500).json({ message: "Internal server error" });
+        console.error("get paste fail", error);
+        return res.status(500).json({ message: "Internal server error" });
     }
 };
+
 
 export const getPasteHTML = async (req, res) => {
     try {
