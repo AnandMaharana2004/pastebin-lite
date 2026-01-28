@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Pastebin Lite</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 700px;
+      margin: 40px auto;
+    }
+    textarea, input {
+      width: 100%;
+      margin: 8px 0;
+      padding: 8px;
+    }
+    button {
+      padding: 10px 16px;
+      cursor: pointer;
+    }
+    .error {
+      color: red;
+      margin-top: 10px;
+    }
+    .result {
+      margin-top: 15px;
+      padding: 10px;
+      background: #f5f5f5;
+    }
+  </style>
+</head>
+<body>
+  <h1>Create a Paste</h1>
+
+  <textarea id="content" rows="8" placeholder="Write your paste here..."></textarea>
+
+  <input
+    type="number"
+    id="maxViews"
+    placeholder="Max views (optional)"
+    min="1"
+  />
+
+  <input
+    type="number"
+    id="ttl"
+    placeholder="TTL in seconds (optional)"
+    min="1"
+  />
+
+  <button id="generateBtn">Generate</button>
+
+  <div id="error" class="error"></div>
+  <div id="result" class="result" style="display:none;"></div>
+
+  <script>
+    const btn = document.getElementById("generateBtn");
+    const errorBox = document.getElementById("error");
+    const resultBox = document.getElementById("result");
+
+    btn.addEventListener("click", async () => {
+      errorBox.textContent = "";
+      resultBox.style.display = "none";
+
+      const content = document.getElementById("content").value;
+      const maxViews = document.getElementById("maxViews").value;
+      const ttl = document.getElementById("ttl").value;
+
+      const payload = { content };
+      if (maxViews) payload.max_views = Number(maxViews);
+      if (ttl) payload.ttl_seconds = Number(ttl);
+
+      try {
+        const res = await fetch("/api/pastes", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          errorBox.textContent = data.message || "Something went wrong";
+          return;
+        }
+
+        resultBox.style.display = "block";
+        resultBox.innerHTML = `
+          <strong>Share URL:</strong><br/>
+          <a href="${data.url}" target="_blank">${data.url}</a>
+        `;
+      } catch (err) {
+        errorBox.textContent = "Network error";
+      }
+    });
+  </script>
+</body>
+</html>

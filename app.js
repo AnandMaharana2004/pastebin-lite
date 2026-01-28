@@ -4,6 +4,7 @@ import express from "express"
 import { connectDB } from "./db/db.js"
 import PasteRouter from "./routes/paste.route.js"
 import { ensureDB } from "./middleware/ensureDb.js"
+import path from "node:path"
 
 const app = express()
 
@@ -13,6 +14,9 @@ app.use(express.json())
 if (process.env.IS_SERVERLESS === "1") {
     app.use(ensureDB);
 }
+app.get("/", (req, res) => {
+    res.sendFile(path.join(process.cwd(), "public/html/index.html"));
+});
 
 app.get("/api/healthz", (req, res) => {
     return res.status(200).json({ ok: true })
